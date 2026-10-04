@@ -1,0 +1,127 @@
+<!doctype html>
+<!-- small machines; breath. a breathing instrument in one file.
+     no network, no dependencies, no account; open it and breathe. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>breath · small machines</title>
+<style>
+  :root{
+    --ink:#101418;
+    --fog:#E8E6E1;
+    --verdigris:#7FA8A0;
+    --moss:#5E7A74;
+    --hair:rgba(232,230,225,.22);
+  }
+  *{margin:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--ink);
+    color:var(--fog);
+    font-family:Georgia,'DejaVu Serif',serif;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:2.2rem;overflow:hidden;
+  }
+  .frame{
+    position:fixed;inset:18px;border:1px solid var(--hair);
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 26px),calc(100% - 26px) 100%,0 100%);
+    pointer-events:none;
+  }
+  header{position:fixed;top:44px;left:52px;letter-spacing:.02em}
+  header h1{font-size:1.5rem;font-weight:700}
+  header p{color:var(--moss);font-size:.85rem;margin-top:.3rem}
+  .ring{position:relative;width:min(58vmin,460px);aspect-ratio:1}
+  .ring svg{position:absolute;inset:0;width:100%;height:100%}
+  .core{
+    position:absolute;inset:16%;border-radius:50%;
+    background:radial-gradient(circle at 38% 34%, var(--verdigris), var(--moss) 78%);
+    transform:scale(.72);
+  }
+  .core.hold{transform:scale(1)}
+  .core.in{transition:transform 4s cubic-bezier(.4,0,.4,1)}
+  .core.out{transition:transform 6s cubic-bezier(.4,0,.4,1)}
+  .core.box{transition:transform 4s cubic-bezier(.4,0,.4,1)}
+  .phase{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:clamp(1.2rem,4vmin,1.7rem);color:var(--ink);font-weight:700;
+  }
+  footer{
+    position:fixed;bottom:44px;display:flex;gap:1.1rem;align-items:center;
+    font-family:'DejaVu Sans Mono',monospace;font-size:.8rem;color:var(--moss);
+  }
+  footer button{
+    font:inherit;color:var(--fog);background:none;cursor:pointer;
+    border:1px solid var(--hair);border-radius:999px;padding:.35rem 1rem;
+  }
+  footer button:hover{border-color:var(--verdigris);color:var(--verdigris)}
+</style>
+</head>
+<body>
+<div class="frame"></div>
+<header>
+  <h1>Breath</h1>
+  <p>One file, no network; the circle keeps the time.</p>
+</header>
+
+<div class="ring">
+  <svg viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="48" fill="none" stroke="var(--hair)" stroke-width=".6"/>
+    <circle id="arc" cx="50" cy="50" r="44" fill="none" stroke="var(--verdigris)"
+      stroke-width="1" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="276.5"
+      transform="rotate(-90 50 50)"/>
+  </svg>
+  <div class="core in" id="core"><div class="phase" id="phase">Inhale</div></div>
+</div>
+
+<footer>
+  <span id="count">0 breaths</span>
+  <button id="mode">mode; 4·4·6</button>
+</footer>
+
+<script>
+  const core = document.getElementById('core');
+  const phase = document.getElementById('phase');
+  const arc = document.getElementById('arc');
+  const count = document.getElementById('count');
+  const modeBtn = document.getElementById('mode');
+
+  const modes = [
+    {name: '4·4·6', steps: [['Inhale',4000,'in',1],['Hold',4000,'hold',1],['Exhale',6000,'out',0]]},
+    {name: 'box 4·4·4·4', steps: [['Inhale',4000,'in',1],['Hold',4000,'hold',1],['Exhale',4000,'out',0],['Hold',4000,'hold',0]]},
+  ];
+  let mi = 0, breaths = 0;
+
+  function run() {
+    const steps = modes[mi].steps;
+    let i = 0;
+    (function step() {
+      const [label, ms, cls, full] = steps[i];
+      phase.textContent = label;
+      core.className = 'core ' + (cls === 'hold' ? (core.classList.contains('hold') ? 'hold' : 'in') : cls);
+      if (cls !== 'hold') core.classList.toggle('hold', full === 1);
+      const C = 276.5;
+      arc.style.transition = 'stroke-dashoffset ' + ms + 'ms linear';
+      arc.style.strokeDashoffset = C * (1 - (i + 1) / steps.length);
+      setTimeout(() => {
+        i = (i + 1) % steps.length;
+        if (i === 0) {
+          breaths += 1;
+          count.textContent = breaths + (breaths === 1 ? ' breath' : ' breaths');
+          arc.style.transition = 'none';
+          arc.style.strokeDashoffset = C;
+        }
+        step();
+      }, ms);
+    })();
+  }
+
+  modeBtn.addEventListener('click', () => {
+    mi = (mi + 1) % modes.length;
+    modeBtn.textContent = 'mode; ' + modes[mi].name;
+  });
+
+  run();
+</script>
+</body>
+</html>
